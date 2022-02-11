@@ -1,0 +1,200 @@
+---
+title: "Project"
+author: Your Name
+date: "Date"
+header-includes: 
+  \usepackage{float}
+  \usepackage{algorithm}
+  \usepackage{algpseudocode}
+  \usepackage{enumitem}
+  \usepackage{comment}
+  \usepackage{bm}
+  \floatplacement{figure}{H}
+output: 
+  pdf_document:
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.width = 7.5, fig.height = 4, 
+                       fig.path = 'Intro_Figs/',
+                       fig.show = 'asis',
+                       fig.align = 'center',
+                       warning = FALSE, message = FALSE)
+```
+
+# Introduction {-}
+
+```{r 1, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE}
+
+LUV.csv <- read.csv("LUV.csv")
+LUV <- ts(rev(LUV.csv[,2]), start = c(2005,1), frequency = 4)
+LUV.train <- ts(LUV[1:60], start = c(2005,1), frequency = 4)
+LUV.test <- ts(LUV[61:65], start = c(2020,1), frequency = 4)
+ts.plot(LUV, main = "Southwest Quarterly Revenue", ylab = "Revenue")
+ts.plot(LUV.train, main = "Southwest Quarterly Revenue", ylab = "Revenue")
+ts.plot(LUV.test, main = "Southwest Quarterly Revenue", ylab = "Revenue")
+```
+
+```{r 2, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE}
+par(mfrow = c(1,2))
+acf(LUV.train, lag.max = 60, main = "Sample ACF", ylim = c(-1,1), ylab = "ACF")
+pacf(LUV.train, lag.max = 60, main = "Sample PACF", ylim = c(-1,1), ylab = "PACF")
+hist(LUV.train, breaks = 30, main = "Histogram", xlab = "Revenue")
+```
+
+```{r 3, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE}
+decomp <- decompose(ts(as.ts(LUV.train), frequency = 4))
+plot(decomp)
+
+```
+```{r 4, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 2.75}
+library(MASS)
+t <- 1:length(1:56)
+bcTrans <- boxcox(LUV.train~t)
+lambda <- bcTrans$x[which(bcTrans$y == max(bcTrans$y))]
+```
+#Not to use in this project
+```{r 5, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.25}
+LUV.bc <- (1/lambda)*(LUV.train^lambda - 1)
+var(LUV.train)
+var(LUV.bc)
+par(mfrow = c(1,2))
+ts.plot(LUV.train, main = "Original Data", ylab = expression(X[t]))
+ts.plot(LUV.train, main = "Box-Cox Tranformed Data", ylab = expression(Y[t]))
+```
+```{r 6, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.15}
+dLUV <- diff(LUV.train, 1)
+var(dLUV)
+ts.plot(dLUV, main = "Trend Differenced Consumer Sentiment", ylab = "")
+```
+
+```{r 7, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3}
+par(mfrow = c(1,2))
+acf(dLUV,lag.max=60,main="Trend Differenced ACF",ylim = c(-1,1), ylab="ACF")
+pacf(dLUV,lag.max=60,main="Trend Differenced PACF",ylim = c(-1,1), ylab="PACF")
+hist(dLUV,breaks=30, main="Histogram: Trend Adjusted TS",xlab = "")
+```
+
+```{r 8, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.25}
+ddLUV <- diff(dLUV, 4)
+var(ddLUV)
+ts.plot(ddLUV, main = "First and Seasonally Differenced Time Series",ylab="")
+abline(h=mean(ddLUV), col="cyan3")
+```
+
+```{r 9, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.25}
+par(mfrow = c(1,2))
+acf(ddLUV,lag.max=60,main="First & Seasonally Differenced ACF",ylim=c(-1,1),ylab="ACF")
+pacf(ddLUV,lag.max=60,main="First & Seasonally Differenced PACF",ylim=c(-1,1),ylab="PACF")
+hist(ddLUV, breaks = 30, main="First & Seasonally Differenced Data", xlab="")
+#difference has started increasing. stop at lag 1
+dddLUV <- diff(ddLUV, 1)
+var(dddLUV)
+```
+
+```{r MC-1, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 4}
+par(mfrow = c(1,2))
+acf(ddLUV,lag.max=60,main="First & Seasonally Differenced ACF",ylim=c(-1,1),ylab="ACF")
+pacf(ddLUV,lag.max=60,main="First & Seasonally Differenced PACF",ylim=c(-1,1),ylab="PACF")
+```
+
+
+```{r MC-2, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE}
+library(qpcR)
+model.1 <- arima(LUV.train, order = c(1,0,1), seasonal = list(order =c(1,1,1), period = 4), method="ML")
+model.2 <- arima(LUV.train, order = c(1,1,1), seasonal = list(order =c(0,1,2), period = 4), method="ML")
+model.3 <- arima(LUV.train, order = c(1,0,0), seasonal = list(order =c(0,1,1), period = 4), method="ML")
+model.4 <- arima(LUV.train, order = c(0,1,0), seasonal = list(order =c(0,1,1), period = 4), method="ML")
+AICc(model.1)
+AICc(model.2)
+AICc(model.3)
+AICc(model.4)
+```
+
+```{r MC-4, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.5}
+library(UnitCircle)
+par(mfrow = c(1,2))
+uc.check(pol_ = c(1, -0.5970), plot_output = TRUE, print_output = FALSE)
+```
+
+$$(1-B)(1-B^{4})X_t = (1-0.597 B^{4})Z_t$$
+
+# Diagnostic Checking {-}
+
+```{r DC-1, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.5}
+library(qpcR)
+Res <- residuals(model.4)
+par(mfrow = c(1,2))
+ts.plot(Res, main = "Model Residuals", ylab = "Residuals")
+abline(h=mean(Res), col="cyan3")
+hist(Res, breaks = 30, main = "Histogram of Model 4 Residuals", xlab = "Residuals")
+```
+
+```{r DC-2, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.5}
+qqnorm(Res, main = "Q-Q Plot of Model 4")
+qqline(Res)
+```
+
+```{r DC-3, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.5}
+par(mfrow = c(1,2))
+acf(Res,lag.max=60, main = "ACF of Model 4", ylab = "ACF")
+pacf(Res,lag.max=60, main = "PACF of Model 4", ylab = "PACF")
+```
+
+Shapiro-Wilk Test
+```{r DC-10, echo = TRUE, eval=TRUE, message = FALSE, warning = FALSE}
+c(shapiro.test(Res)$p.value)
+```
+
+Box-Pierce Test
+```{r DC-11, echo = TRUE, eval=TRUE, message = FALSE, warning = FALSE}
+c(Box.test(Res, lag=13, type = c("Box-Pierce"), fitdf = 1)$p.value)
+```
+
+Ljung-Box Test
+```{r DC-12, echo = TRUE, eval=TRUE, message = FALSE, warning = FALSE}
+c(Box.test(Res, lag=13, type = c("Ljung-Box"), fitdf = 1)$p.value)
+```
+
+McLeod-Li Test
+```{r DC-13, echo = TRUE, eval=TRUE, message = FALSE, warning = FALSE}
+c(Box.test(Res^2, lag=13, type = c("Ljung-Box"))$p.value)
+```
+
+Fitting the `ar` function
+```{r DC-14, echo = TRUE, eval=TRUE, message = FALSE, warning = FALSE}
+c(ar(Res, aic = TRUE, order.max = NULL, method = "yw")$order)
+```
+
+
+# Forecasting {-}
+
+```{r F-1, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.8}
+library(qpcR)
+library(forecast)
+pred <- predict(model.4, n.ahead = 5)
+pred.orig <- pred$pred
+pred.LowerSE <- pred.orig + 1.96*(pred$se)
+pred.UpperSE <- pred.orig - 1.96*(pred$se)
+ts.plot(LUV.train, xlim = c(2018, 2021), ylim = c(0, 8000), main = "Forecast of BKNG from Q1 2020 to Q4 2020", ylab = "Revenue")
+points(pred.orig, col = "red")
+lines(LUV.test, col = "blue")
+lines(pred.LowerSE, col = "chartreuse4", lty = "dashed")
+lines(pred.UpperSE, col = "chartreuse4", lty = "dashed")
+legend("bottomleft", legend=c("Existing Obs.", "Upper Bound", "True Obs.", "Lower Bound", "Forecasted Obs."), col=c("black", "chartreuse4", "blue", "chartreuse4", "red"), lty = c(1,2,1,2,1), cex=0.8)
+# *0.95 to correct revenue for 2019
+sum(pred.orig)
+sum(pred.LowerSE)
+sum(pred.UpperSE)
+```
+
+ 
+```{r F-2, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.8}
+library(forecast)
+pi.range <- abs(pred.UpperSE - pred.LowerSE)
+abs.err <- abs(pred.orig - LUV.test)
+rel.err <- abs.err/LUV.test*100
+knitr::kable(rbind(cbind(round(LUV.test, 2), round(pred.orig,2), round(abs.err,2),  round(rel.err,2), round(pi.range,2))), align = "cccc", col.names = c("True Value", "Forecasted Value", "Absolute Error", "Relative Error in %", "95% P.I. Range"))
+```

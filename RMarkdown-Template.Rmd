@@ -1,0 +1,154 @@
+---
+title: "Project"
+author: Your Name
+date: "Date"
+header-includes: 
+  \usepackage{float}
+  \usepackage{algorithm}
+  \usepackage{algpseudocode}
+  \usepackage{enumitem}
+  \usepackage{comment}
+  \usepackage{bm}
+  \floatplacement{figure}{H}
+output: 
+  pdf_document:
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.width = 7.5, fig.height = 4, 
+                       fig.path = 'Intro_Figs/',
+                       fig.show = 'asis',
+                       fig.align = 'center',
+                       warning = FALSE, message = FALSE)
+```
+
+# Introduction {-}
+
+```{r 1, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE}
+
+LUV.csv <- read.csv("LUV.csv")
+LUV <- ts(rev(LUV.csv[,2]), start = c(2005,1), frequency = 4)
+LUV.train <- ts(LUV[1:60], start = c(2005,1), frequency = 4)
+LUV.test <- ts(LUV[61:65], start = c(2020,1), frequency = 4)
+ts.plot(LUV, main = "Southwest Quarterly Revenue", ylab = "Revenue")
+ts.plot(LUV.train, main = "Southwest Quarterly Revenue", ylab = "Revenue")
+ts.plot(LUV.test, main = "Southwest Quarterly Revenue", ylab = "Revenue")
+```
+
+```{r 2, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE}
+par(mfrow = c(1,2))
+acf(LUV.train, lag.max = 60, main = "Sample ACF", ylim = c(-1,1), ylab = "ACF")
+pacf(LUV.train, lag.max = 60, main = "Sample PACF", ylim = c(-1,1), ylab = "PACF")
+hist(LUV.train, breaks = 30, main = "Histogram", xlab = "Revenue")
+```
+
+```{r 3, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE}
+decomp <- decompose(ts(as.ts(LUV.train), frequency = 4))
+plot(decomp)
+
+```
+```{r 4, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 2.75}
+library(MASS)
+t <- 1:length(1:60)
+bcTrans <- boxcox(LUV.train~t)
+lambda <- bcTrans$x[which(bcTrans$y == max(bcTrans$y))]
+```
+#Not to use in this project
+```{r 5, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.25}
+LUV.bc <- (1/lambda)*(LUV.train^lambda - 1)
+var(LUV.train)
+var(LUV.bc)
+par(mfrow = c(1,2))
+ts.plot(LUV.train, main = "Original Data", ylab = expression(X[t]))
+ts.plot(LUV.train, main = "Box-Cox Tranformed Data", ylab = expression(Y[t]))
+```
+```{r 6, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.15}
+dLUV <- diff(LUV.train, 1)
+var(dLUV)
+ts.plot(dLUV, main = "Trend Differenced Consumer Sentiment", ylab = "")
+```
+
+```{r 7, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3}
+par(mfrow = c(1,2))
+acf(dLUV,lag.max=60,main="Trend Differenced ACF",ylim = c(-1,1), ylab="ACF")
+pacf(dLUV,lag.max=60,main="Trend Differenced PACF",ylim = c(-1,1), ylab="PACF")
+hist(dLUV,breaks=30, main="Histogram: Trend Adjusted TS",xlab = "")
+```
+
+```{r 8, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.25}
+ddLUV <- diff(dLUV, 4)
+var(ddLUV)
+ts.plot(ddLUV, main = "First and Seasonally Differenced Time Series",ylab="")
+abline(h=mean(ddLUV), col="cyan3")
+```
+
+```{r 9, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.25}
+par(mfrow = c(1,2))
+hist(ddLUV, breaks = 30, main="First & Seasonally Differenced Data", xlab="")
+acf(ddLUV,lag.max=60,main="First & Seasonally Differenced ACF",ylim=c(-1,1),ylab="ACF")
+pacf(ddLUV,lag.max=60,main="First & Seasonally Differenced PACF",ylim=c(-1,1),ylab="PACF")
+
+#difference has started increasing. stop at lag 1
+dddLUV <- diff(ddLUV, 1)
+var(dddLUV)
+```
+
+
+
+
+
+#copied chunks from cosmin's project
+```{r 1, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE}
+
+TRFVOLUSM227NFWA.csv <- read.csv("TRFVOLUSM227NFWA.csv")
+TRFVOLUSM227NFWA <- ts(TRFVOLUSM227NFWA.csv[,2], start = c(1970,1), frequency = 12)
+TRFVOLUSM227NFWA.train <- ts(TRFVOLUSM227NFWA[217:396], start = c(1988,1), frequency = 12)
+TRFVOLUSM227NFWA.test <- ts(TRFVOLUSM227NFWA[396:408], start = c(2002,12), frequency = 12)
+TRFVOLUSM227NFWA.all <- ts(TRFVOLUSM227NFWA[217:408], start = c(1988,1), frequency = 12)
+ts.plot(TRFVOLUSM227NFWA.all, main = "Historic Monthly Vehicle Miles Traveled", ylab = "Vehicle Miles Traveled")
+mtext(descr, side = 1, line = 4, cex = 0.7, adj = 0)
+
+```
+```{r EDA-1, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE}
+par(mfrow = c(1,2))
+acf(TRFVOLUSM227NFWA.all, lag.max = 60, main = "Sample ACF", ylim = c(-1,1), ylab = "ACF")
+hist(TRFVOLUSM227NFWA.all, breaks = 30, main = "Histogram of Vehicle Miles Traveled", xlab = "Miles in mil.")
+```
+```{r EDA-3, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE}
+decomp <- decompose(ts(as.ts(TRFVOLUSM227NFWA.all), frequency = 12))
+plot(decomp)
+```
+```{r BC-1, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 2.75}
+library(MASS)
+t <- 1:length(217:396)
+bcTrans <- boxcox(TRFVOLUSM227NFWA.train~t)
+lambda <- bcTrans$x[which(bcTrans$y == max(bcTrans$y))]
+```
+```{r BC-2, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.25}
+TRFVOLUSM227NFWA.bc <- (1/lambda)*(TRFVOLUSM227NFWA.train^lambda - 1)
+par(mfrow = c(1,2))
+ts.plot(TRFVOLUSM227NFWA.train, main = "Original Data", ylab = expression(X[t]))
+ts.plot(TRFVOLUSM227NFWA.bc, main = "Box-Cox Tranformed Data", ylab = expression(Y[t]))
+```
+```{r D-2, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.15}
+dTRFVOLUSM227NFWA <- diff(TRFVOLUSM227NFWA.train, 12)
+ts.plot(dTRFVOLUSM227NFWA, main = "Seasonally Differenced Consumer Sentiment", ylab = "")
+```
+```{r D-3, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3}
+par(mfrow = c(1,2))
+hist(dTRFVOLUSM227NFWA,breaks=30, main="Histogram: Seasonally Adjusted TS",xlab = "")
+acf(dTRFVOLUSM227NFWA,lag.max=60,main="Seasonally Differenced ACF",ylim = c(-1,1), ylab="ACF")
+```
+```{r D-5, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.25}
+ddTRFVOLUSM227NFWA <- diff(dTRFVOLUSM227NFWA, 1)
+ts.plot(ddTRFVOLUSM227NFWA, main = "First and Seasonally Differenced Time Series",ylab="")
+abline(h=mean(ddTRFVOLUSM227NFWA), col="cyan3")
+```
+```{r D-6, echo = FALSE, eval=TRUE, message = FALSE, warning = FALSE, fig.width = 7.5, fig.height = 3.25}
+par(mfrow = c(1,2))
+hist(ddTRFVOLUSM227NFWA, breaks = 30, main="First & Seasonally Differenced Data", xlab="")
+acf(ddTRFVOLUSM227NFWA,lag.max=60,main="First & Seasonally Differenced ACF",ylim=c(-1,1),ylab="ACF")
+dddTRFVOLUSM227NFWA <- diff(ddTRFVOLUSM227NFWA, 1)
+```
